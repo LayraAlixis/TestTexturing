@@ -14,6 +14,8 @@ public class AppManager : MonoBehaviour, IMixedRealityPointerHandler
     public AppStates State { get; protected set; }
     public MiniatureRoom MiniatureRoom;
 
+    public TextureMappingManager textureMappingManager;
+
     void Start() 
     {
         State = AppStates.Scanning;
@@ -48,11 +50,13 @@ public class AppManager : MonoBehaviour, IMixedRealityPointerHandler
         if (eventData.InputSource.SourceType == InputSourceType.Hand)
         {
             var result = eventData.Pointer.Result;
+            Debug.Log(result);
             if(result == null || result.CurrentPointerTarget.layer == 31)
             {
                 switch (State)
                 {
                     case AppStates.Scanning:
+                        textureMappingManager.ApplyTextureMappingReload();
                         break;
                     case AppStates.MappingTexture:
                         Debug.Log("Take Photo");

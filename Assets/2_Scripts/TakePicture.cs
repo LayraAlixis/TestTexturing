@@ -16,6 +16,7 @@ using System.IO;
 using System;
 using UnityEngine.XR.WSA.WebCam;
 using UnityEngine.XR.WSA.Input;
+using UnityEditor;
 
 //Imports to interact with Camera
 #if WINDOWS_UWP
@@ -26,8 +27,6 @@ using Windows.Media.Devices;
 public class TakePicture : MonoBehaviour
 {
     //data copying fronm list to pass to shader
-    //public Matrix4x4[] worldToCameraMatrixArray;
-    //public Matrix4x4[] projectionMatrixArray;
     [System.NonSerialized]
     public Texture2DArray textureArray;
 
@@ -35,7 +34,6 @@ public class TakePicture : MonoBehaviour
     public int maxPhotoNum;
     //Locks in the exposure and white balance after first photo.
     public bool lockCameraSettings = true;
-    //Texture2D destTex;
 
     //camera paramaters
     private CameraParameters m_CameraParameters;
@@ -43,7 +41,6 @@ public class TakePicture : MonoBehaviour
     byte[] bytes;
 
     //temp data waiting to pass to shader
-    //private List<Texture2D> textureList;
     [System.NonSerialized]
     public List<Matrix4x4> projectionMatrixList;
     [System.NonSerialized]
@@ -55,7 +52,6 @@ public class TakePicture : MonoBehaviour
     private int currentPhoto = 0;
     private GestureRecognizer recognizer;
     
-    //private ImageTextureMapping[] imageTextureMappingList;
 #if UNITY_EDITOR
     private const int TEXTURE_WIDTH = 512;
     private const int TEXTURE_HEIGHT = 256;
@@ -68,32 +64,27 @@ public class TakePicture : MonoBehaviour
 
     private string path;
 
-#region debug
+    #region debug
     public Texture2D[] SampleTexture;
     #endregion
 
     void Start()
     {
         //init
-        //textureList = new List<Texture2D>();
         projectionMatrixList = new List<Matrix4x4>();
-        //worldToCameraMatrixArray = new Matrix4x4[maxPhotoNum];
-        //projectionMatrixArray = new Matrix4x4[maxPhotoNum];
         worldToCameraMatrixList = new List<Matrix4x4>();
 
         path = Application.persistentDataPath;
         path = Path.Combine(path, "Room");
         Directory.CreateDirectory(path);
 
-        //init camera
-        InitCamera();
-
-        //imageTextureMappingList = SpatialMapping.GetComponentsInChildren<ImageTextureMapping>();
-
         //for debug
 #if UNITY_EDITOR
         StartCoroutine(DebugCapture());
 #endif
+
+        //init camera
+        InitCamera();
     }
 
     IEnumerator DebugCapture()
@@ -110,6 +101,7 @@ public class TakePicture : MonoBehaviour
     {
         List<Resolution> resolutions = new List<Resolution>(PhotoCapture.SupportedResolutions);
 
+#if !UNITY_EDITOR
         //1280 * 720
         Resolution selectedResolution = resolutions[0];
 
@@ -121,6 +113,7 @@ public class TakePicture : MonoBehaviour
             hologramOpacity = 0.0f,
             pixelFormat = CapturePixelFormat.BGRA32
         };
+#endif
 
         textureArray = new Texture2DArray(TEXTURE_WIDTH, TEXTURE_HEIGHT, maxPhotoNum, TextureFormat.DXT5, false);
         var clearTexture = new Texture2D(TEXTURE_WIDTH, TEXTURE_HEIGHT, TextureFormat.ARGB32, false);
@@ -135,18 +128,8 @@ public class TakePicture : MonoBehaviour
         clearTexture.Compress(true);
 
         Graphics.CopyTexture(clearTexture, 0, 0, textureArray, 0, 0); //Copies the last texture
-        //   m_Texture = new Texture2D(m_CameraParameters.cameraResolutionWidth, m_CameraParameters.cameraResolutionHeight, TextureFormat.ARGB32, false);
-        //init photocaptureobject
-        PhotoCapture.CreateAsync(false, OnCreatedPhotoCaptureObject);
 
-        /*
-        recognizer = new GestureRecognizer();
-        recognizer.TappedEvent += (source, tapCount, ray) =>
-        {
-            OnPhotoKeyWordDetected();
-        };
-        recognizer.StartCapturingGestures();
-        */
+        PhotoCapture.CreateAsync(false, OnCreatedPhotoCaptureObject);
     }
 
     void OnCreatedPhotoCaptureObject(PhotoCapture captureObject)
@@ -162,7 +145,6 @@ public class TakePicture : MonoBehaviour
 
     public void TakePhoto()
     {
-        Debug.Log(isCapturingPhoto);
         if (isCapturingPhoto)
         {
             return;
@@ -170,25 +152,9 @@ public class TakePicture : MonoBehaviour
         isCapturingPhoto = true;
         photoCaptureObj.TakePhotoAsync(OnPhotoCaptured);
     }
-    /*
-    public void OnPhotoKeyWordDetected()
-    {
-        //if it is capturing photo now, just return
-        if (isCapturingPhoto)
-        {
-            return;
-        }
-
-        isCapturingPhoto = true;
-        //TextManager.Instance.setText("Taking picture...");
-
-        photoCaptureObj.TakePhotoAsync(OnPhotoCaptured);
-    }
-    */
 
     void OnPhotoCaptured(PhotoCapture.PhotoCaptureResult result, PhotoCaptureFrame photoCaptureFrame)
     {
-        Debug.Log("TakingPhoto");
         //After the first photo, we want to lock in the current exposure and white balance settings.
         if (lockCameraSettings && currentPhoto == 1)
         {
@@ -226,7 +192,6 @@ public class TakePicture : MonoBehaviour
 
         m_Texture = ResizeTexture(m_Texture, TEXTURE_WIDTH, TEXTURE_HEIGHT);
 
-        //textureList.Add(m_Texture);
         photoCaptureFrame.Dispose();
 
         //save room to png
@@ -237,7 +202,8 @@ public class TakePicture : MonoBehaviour
         File.WriteAllBytes(filePath, bytes);
 
         m_Texture.Compress(true);
-        Graphics.CopyTexture(m_Texture, 0, 0, textureArray, currentPhoto + 1, 0); 
+        Graphics.CopyTexture(m_Texture, 0, 0, textureArray, currentPhoto + 1, 0);
+        textureArray.Apply();
 
         if (OnTextureUpdated != null)
         {
@@ -260,8 +226,8 @@ public class TakePicture : MonoBehaviour
         cameraToWorldMatrix.m00 = -1f;
         cameraToWorldMatrix.m11 = -1f;
         cameraToWorldMatrix.m22 = -1f;
-        
-        if(currentPhoto % SampleTexture.Length == 1)
+
+        if (currentPhoto % SampleTexture.Length == 1)
         {
             cameraToWorldMatrix.m03 = 0.3f;
         }
@@ -305,7 +271,6 @@ public class TakePicture : MonoBehaviour
         {
             photoCaptureObj.StopPhotoModeAsync(OnStoppedPhotoMode);
         }
-        //TextManager.Instance.setText("");
     }
 
     protected Matrix4x4 GetDummyProjectionMatrix()

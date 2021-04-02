@@ -19,7 +19,6 @@ public class TextureMappingManager : MonoBehaviour, SpatialAwarenessHandler
     protected void OnTextureUpdated()
     {
         StartCoroutine(UpdateAllMap());
-        Debug.Log("Update des textures");
     }
 
     protected IEnumerator UpdateAllMap()
@@ -47,6 +46,11 @@ public class TextureMappingManager : MonoBehaviour, SpatialAwarenessHandler
             imageTextureMapping = obj.AddComponent<ImageTextureMapping>();
         }
         imageTextureMapping.ApplyTextureMapping(takePicture.worldToCameraMatrixList, takePicture.projectionMatrixList, takePicture.textureArray);
+    }
+
+    public void ApplyTextureMappingReload()
+    {
+        OnTextureUpdated();
     }
 
     private void OnEnable()
