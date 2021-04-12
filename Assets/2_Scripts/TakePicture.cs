@@ -129,7 +129,9 @@ public class TakePicture : MonoBehaviour
 
         Graphics.CopyTexture(clearTexture, 0, 0, textureArray, 0, 0); //Copies the last texture
 
+#if !UNITY_EDITOR
         PhotoCapture.CreateAsync(false, OnCreatedPhotoCaptureObject);
+#endif
     }
 
     void OnCreatedPhotoCaptureObject(PhotoCapture captureObject)
@@ -209,7 +211,7 @@ public class TakePicture : MonoBehaviour
         {
             OnTextureUpdated();
         }
-        currentPhoto += 1;
+        currentPhoto++;
         isCapturingPhoto = false;
         Resources.UnloadUnusedAssets();
     }
@@ -240,6 +242,7 @@ public class TakePicture : MonoBehaviour
 
         var texture = SampleTexture[currentPhoto % SampleTexture.Length];
         Graphics.CopyTexture(texture, 0, 0, textureArray, currentPhoto + 1, 0);
+        textureArray.Apply();
 
         if (OnTextureUpdated != null)
         {

@@ -27,10 +27,6 @@ public class ImageTextureMapping : MonoBehaviour
 
     public IEnumerator ApplyTextureMappingCoroutine(List<Matrix4x4> worldToCameraMatrixList, List<Matrix4x4> projectionMatrixList, Texture2DArray textureArray)
     {
-        Debug.Log("ApplyTexture");
-        Debug.Log(worldToCameraMatrixList);
-        Debug.Log(projectionMatrixList);
-        Debug.Log(textureArray);
         var mesh = GetComponent<MeshFilter>().mesh;
 
         var vertices = mesh.vertices;
